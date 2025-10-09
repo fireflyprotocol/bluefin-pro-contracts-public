@@ -1,0 +1,5 @@
+.DS_Store
+
+.coverage_map.mvcov
+.trace
+build/

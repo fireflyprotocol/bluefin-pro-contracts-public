@@ -1,0 +1,13 @@
+[package]
+name = "bluefin_cross_margin_dex"
+version = "1.0.0"
+edition = "legacy"
+published-at = "0xe238f46c63c8d3e4a9c104731ff0e3ca830660314789964d3ae53808084a50a0"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+
+[addresses]
+bluefin_cross_margin_dex = "0xe74481697f432ddee8dd6f9bd13b9d0297a5b63d55f3db25c4d3b5d34dad85b7"
