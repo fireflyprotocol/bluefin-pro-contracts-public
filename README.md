@@ -1,10 +1,4 @@
-<div align="center">
-  <img height="100x" src="https://bluefin.io/images/bluefin-logo.svg" />
-
-  <h1 style="margin-top:20px;">Bluefin Pro - Cross Margin Perpetual DEX Sui Move Contracts</h1>
-
-</div>
-
+# Bluefin Pro - Cross Margin Perpetual DEX Sui Move Contracts
 
 ## How To?
 - To compile contracts run `sui move build`
