@@ -1,6 +1,5 @@
 module bluefin_cross_margin_dex::test_signed_number {
-    use bluefin_cross_margin_dex::signed_number;
-    use bluefin_cross_margin_dex::constants;
+    use bluefin_cross_margin_dex::{constants, signed_number};
     use sui::bcs;
 
     // Test constants
@@ -38,7 +37,12 @@ module bluefin_cross_margin_dex::test_signed_number {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5000, location = bluefin_cross_margin_dex::signed_number)]
+    #[
+        expected_failure(
+            abort_code = 5000,
+            location = bluefin_cross_margin_dex::signed_number,
+        ),
+    ]
     fun test_from_zero_negative_fails() {
         signed_number::from(0, false);
     }
@@ -54,15 +58,15 @@ module bluefin_cross_margin_dex::test_signed_number {
     fun test_from_bytes() {
         let value: u64 = TEST_VALUE_1;
         let sign: bool = true;
-        
+
         // Create properly formatted bytes for BCS deserialization
         let value_bytes = bcs::to_bytes(&value);
         let sign_bytes = bcs::to_bytes(&sign);
-        
+
         // Combine bytes in the correct order (value first, then sign)
         let all_bytes = value_bytes;
         std::vector::append(&mut all_bytes, sign_bytes);
-        
+
         let n = signed_number::from_bytes(all_bytes);
         assert!(signed_number::value(n) == value, 1);
         assert!(signed_number::sign(n) == sign, 2);
@@ -139,7 +143,9 @@ module bluefin_cross_margin_dex::test_signed_number {
         let n = signed_number::from(TEST_VALUE_1, true);
         let result = signed_number::mul_uint(n, 2);
         // base_mul(TEST_VALUE_1, 2) = (TEST_VALUE_1 * 2) / base_uint()
-        let expected = (((TEST_VALUE_1 as u128) * 2) / (constants::base_uint() as u128) as u64);
+        let expected = (
+            ((TEST_VALUE_1 as u128) * 2) / (constants::base_uint() as u128) as u64,
+        );
         assert!(signed_number::value(result) == expected, 1);
         assert!(signed_number::sign(result) == true, 2);
     }
@@ -148,7 +154,9 @@ module bluefin_cross_margin_dex::test_signed_number {
     fun test_mul_uint_negative() {
         let n = signed_number::from(TEST_VALUE_1, false);
         let result = signed_number::mul_uint(n, 2);
-        let expected = (((TEST_VALUE_1 as u128) * 2) / (constants::base_uint() as u128) as u64);
+        let expected = (
+            ((TEST_VALUE_1 as u128) * 2) / (constants::base_uint() as u128) as u64,
+        );
         assert!(signed_number::value(result) == expected, 1);
         assert!(signed_number::sign(result) == false, 2);
     }
@@ -166,7 +174,9 @@ module bluefin_cross_margin_dex::test_signed_number {
         let n = signed_number::from(TEST_VALUE_1, true);
         let result = signed_number::div_uint(n, 2);
         // base_div(TEST_VALUE_1, 2) = (TEST_VALUE_1 * base_uint()) / 2
-        let expected = (((TEST_VALUE_1 as u128) * (constants::base_uint() as u128)) / 2 as u64);
+        let expected = (
+            ((TEST_VALUE_1 as u128) * (constants::base_uint() as u128)) / 2 as u64,
+        );
         assert!(signed_number::value(result) == expected, 1);
         assert!(signed_number::sign(result) == true, 2);
     }
@@ -175,7 +185,9 @@ module bluefin_cross_margin_dex::test_signed_number {
     fun test_div_uint_negative() {
         let n = signed_number::from(TEST_VALUE_1, false);
         let result = signed_number::div_uint(n, 2);
-        let expected = (((TEST_VALUE_1 as u128) * (constants::base_uint() as u128)) / 2 as u64);
+        let expected = (
+            ((TEST_VALUE_1 as u128) * (constants::base_uint() as u128)) / 2 as u64,
+        );
         assert!(signed_number::value(result) == expected, 1);
         assert!(signed_number::sign(result) == false, 2);
     }
@@ -384,7 +396,7 @@ module bluefin_cross_margin_dex::test_signed_number {
         let b = signed_number::from(TEST_VALUE_1, true);
         assert!(signed_number::gte(a, b) == true, 1);
         assert!(signed_number::gte(b, a) == false, 2);
-        
+
         let c = signed_number::from(TEST_VALUE_1, true);
         assert!(signed_number::gte(b, c) == true, 3); // Equal
     }
@@ -411,7 +423,7 @@ module bluefin_cross_margin_dex::test_signed_number {
         let b = signed_number::from(TEST_VALUE_1, true);
         assert!(signed_number::gt(a, b) == true, 1);
         assert!(signed_number::gt(b, a) == false, 2);
-        
+
         let c = signed_number::from(TEST_VALUE_1, true);
         assert!(signed_number::gt(b, c) == false, 3); // Equal
     }
@@ -461,7 +473,7 @@ module bluefin_cross_margin_dex::test_signed_number {
         let a = signed_number::from(TEST_VALUE_1, true);
         let b = signed_number::from(TEST_VALUE_1, true);
         assert!(signed_number::eq(a, b) == true, 1);
-        
+
         let c = signed_number::from(TEST_VALUE_1, false);
         let d = signed_number::from(TEST_VALUE_1, false);
         assert!(signed_number::eq(c, d) == true, 2);
@@ -545,11 +557,11 @@ module bluefin_cross_margin_dex::test_signed_number {
     fun test_positive_number() {
         let n_pos = signed_number::from(TEST_VALUE_1, true);
         let n_neg = signed_number::from(TEST_VALUE_1, false);
-        
+
         let result_pos = signed_number::positive_number(n_pos);
         assert!(signed_number::value(result_pos) == TEST_VALUE_1, 1);
         assert!(signed_number::sign(result_pos) == true, 2);
-        
+
         let result_neg = signed_number::positive_number(n_neg);
         assert!(signed_number::value(result_neg) == 0, 3);
         assert!(signed_number::sign(result_neg) == true, 4);
@@ -559,11 +571,11 @@ module bluefin_cross_margin_dex::test_signed_number {
     fun test_negative_number() {
         let n_pos = signed_number::from(TEST_VALUE_1, true);
         let n_neg = signed_number::from(TEST_VALUE_1, false);
-        
+
         let result_pos = signed_number::negative_number(n_pos);
         assert!(signed_number::value(result_pos) == 0, 1);
         assert!(signed_number::sign(result_pos) == true, 2);
-        
+
         let result_neg = signed_number::negative_number(n_neg);
         assert!(signed_number::value(result_neg) == TEST_VALUE_1, 3);
         assert!(signed_number::sign(result_neg) == false, 4);
@@ -593,14 +605,14 @@ module bluefin_cross_margin_dex::test_signed_number {
     #[test]
     fun test_chain_operations() {
         // Test chaining multiple operations
-        let a = signed_number::from(TEST_VALUE_1, true);  // +1000000000
+        let a = signed_number::from(TEST_VALUE_1, true); // +1000000000
         let b = signed_number::from(TEST_VALUE_2, false); // -2000000000
-        
+
         // (a + b) - a should equal b
         // (1000000000 + (-2000000000)) - 1000000000 = -1000000000 - 1000000000 = -2000000000
         let sum = signed_number::add(a, b);
         let result = signed_number::sub(sum, a);
-        
+
         // Result should equal b (negative 2000000000)
         assert!(signed_number::value(result) == TEST_VALUE_2, 1);
         assert!(signed_number::sign(result) == false, 2);
@@ -611,7 +623,7 @@ module bluefin_cross_margin_dex::test_signed_number {
         let zero_pos = signed_number::new();
         let small_pos = signed_number::from(1, true);
         let small_neg = signed_number::from(1, false);
-        
+
         // Zero comparisons
         assert!(signed_number::gt(small_pos, zero_pos) == true, 1);
         assert!(signed_number::lt(small_neg, zero_pos) == true, 2);

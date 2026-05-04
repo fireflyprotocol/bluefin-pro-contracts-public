@@ -8,21 +8,20 @@
 */
 
 module bluefin_cross_margin_dex::constants {
-    use std::string::{Self, String};
-    use std::vector;
+    use std::{string::{Self, String}, vector};
 
     //===========================================================//
     //                          Constants                        //
     //===========================================================//
 
-    /// Tracks the current version of the package. Every time a breaking change is pushed, 
-    /// increment the version on the new package, making any old version of the package 
+    /// Tracks the current version of the package. Every time a breaking change is pushed,
+    /// increment the version on the new package, making any old version of the package
     /// unable to be used
     const VERSION: u64 = 1;
 
-    /// Indicates that the request type was deposit 
+    /// Indicates that the request type was deposit
     const TYPE_DEPOSIT: u8 = 0;
-    
+
     /// Indicates that the request typ was withdraw
     const TYPE_WITHDRAW: u8 = 1;
 
@@ -30,7 +29,7 @@ module bluefin_cross_margin_dex::constants {
     const PROTOCOL_DECIMALS: u8 = 9;
 
     /// The basic unit (one in 1e9 decimals) Every thing on the protocol is represent in 9 decimal places
-    const BASE_UINT : u64 = 1000000000;
+    const BASE_UINT: u64 = 1000000000;
 
     /// The ED25519 wallet identifier
     const ED25519_WALLET_SCHEME: u8 = 0;
@@ -43,7 +42,7 @@ module bluefin_cross_margin_dex::constants {
 
     /// MMR threshold value
     const MMR_THRESHOLD: u8 = 1;
-    
+
     /// Action types
     const ACTION_TRADE: u8 = 1;
     const ACTION_LIQUIDATE: u8 = 2;
@@ -57,29 +56,41 @@ module bluefin_cross_margin_dex::constants {
     /// during execution of an isolated trade
     const ACTION_ISOLATED_TRADE: u8 = 9;
 
-
-    /// Prune Table 
+    /// Prune Table
     const PRUNE_HISTORY: u8 = 1;
     const PRUNE_ORDER_FILLS: u8 = 2;
-
 
     /// Timestamp (ms) after which pruning an entry of a table is allowed
     const LIFESPAN: u64 = 7776000000; // 3 months
 
-    const MAX_VALUE_U64: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    /// ADL fee rate: 2% expressed in e9 (0.02 * 1e9 = 20_000_000)
+    const ADL_FEE_RATE: u64 = 20_000_000;
 
+    const MAX_VALUE_U64: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     /// Payload types
     const PAYLOAD_TYPE_LIQUIDATE: vector<u8> = b"Bluefin Pro Liquidation";
-    const PAYLOAD_TYPE_SETTING_FUNDING_RATE: vector<u8> = b"Bluefin Pro Setting Funding Rate";
+    const PAYLOAD_TYPE_SETTING_FUNDING_RATE: vector<u8> =
+        b"Bluefin Pro Setting Funding Rate";
     const PAYLOAD_TYPE_PRUNING_TABLE: vector<u8> = b"Bluefin Pro Pruning Table";
-    const PAYLOAD_TYPE_AUTHORIZING_LIQUIDATOR: vector<u8> = b"Bluefin Pro Authorizing Liquidator";
-    const PAYLOAD_TYPE_SETTING_ACCOUNT_FEE_TIER: vector<u8> = b"Bluefin Pro Setting Account Fee Tier";
-    const PAYLOAD_TYPE_SETTING_ACCOUNT_TYPE: vector<u8> = b"Bluefin Pro Setting Account type";
+    const PAYLOAD_TYPE_AUTHORIZING_LIQUIDATOR: vector<u8> =
+        b"Bluefin Pro Authorizing Liquidator";
+    const PAYLOAD_TYPE_SETTING_ACCOUNT_FEE_TIER: vector<u8> =
+        b"Bluefin Pro Setting Account Fee Tier";
+    const PAYLOAD_TYPE_SETTING_ACCOUNT_TYPE: vector<u8> =
+        b"Bluefin Pro Setting Account type";
     const PAYLOAD_TYPE_SETTING_GAS_FEE: vector<u8> = b"Bluefin Pro Setting Gas Fee";
     const PAYLOAD_TYPE_SETTING_GAS_POOL: vector<u8> = b"Bluefin Pro Setting Gas Pool";
     const PAYLOAD_TYPE_ADL: vector<u8> = b"Bluefin Pro ADL";
-            
+    const PAYLOAD_TYPE_TEE_ASSET_UPDATE: vector<u8> = b"Bluefin Pro TEE Asset Update";
+    const PAYLOAD_TYPE_TEE_POSITION_UPDATE: vector<u8> =
+        b"Bluefin Pro TEE Position Update";
+    const PAYLOAD_TYPE_TEE_USER_AUTHORIZED_ACCOUNTS_UPDATE: vector<u8> =
+        b"Bluefin Pro TEE User Authorized Accounts Update";
+    const PAYLOAD_TYPE_TEE_USER_TRADE_FEE_UPDATE: vector<u8> =
+        b"Bluefin Pro TEE User Trade Fee Update";
+    const PAYLOAD_TYPE_TEE_UPDATE_ACCOUNT_TYPE: vector<u8> =
+        b"Bluefin Pro TEE Account Type Update";
     //===========================================================//
     //                        Getter Methods                     //
     //===========================================================//
@@ -96,27 +107,27 @@ module bluefin_cross_margin_dex::constants {
         TYPE_WITHDRAW
     }
 
-    public fun protocol_decimals() : u8 {
+    public fun protocol_decimals(): u8 {
         PROTOCOL_DECIMALS
     }
 
-    public fun base_uint() : u64 {
+    public fun base_uint(): u64 {
         BASE_UINT
     }
 
-    public fun secp256k1_scheme() : u8 {
+    public fun secp256k1_scheme(): u8 {
         SECP_256K1_WALLET_SCHEME
     }
 
-    public fun ed25519_scheme() : u8 {
+    public fun ed25519_scheme(): u8 {
         ED25519_WALLET_SCHEME
     }
 
-    public fun imr_threshold() : u8 {
+    public fun imr_threshold(): u8 {
         IMR_THRESHOLD
     }
 
-    public fun mmr_threshold() : u8 {
+    public fun mmr_threshold(): u8 {
         MMR_THRESHOLD
     }
 
@@ -172,13 +183,11 @@ module bluefin_cross_margin_dex::constants {
         ACTION_ISOLATED_TRADE
     }
 
-
     public fun empty_string(): String {
         string::utf8(b"")
     }
 
     public fun get_supported_operators(): vector<String> {
-
         let types = vector::empty<String>();
 
         vector::push_back(&mut types, string::utf8(b"funding"));
@@ -188,7 +197,6 @@ module bluefin_cross_margin_dex::constants {
 
         types
     }
-
 
     public fun history_table(): u8 {
         PRUNE_HISTORY
@@ -205,9 +213,13 @@ module bluefin_cross_margin_dex::constants {
     public fun usdc_token_symbol(): String {
         string::utf8(b"USDC")
     }
-    
+
     public fun max_value_u64(): u64 {
         MAX_VALUE_U64
+    }
+
+    public fun adl_fee_rate(): u64 {
+        ADL_FEE_RATE
     }
 
     public fun payload_type_liquidate(): vector<u8> {
@@ -233,7 +245,7 @@ module bluefin_cross_margin_dex::constants {
     public fun payload_type_setting_account_type(): vector<u8> {
         PAYLOAD_TYPE_SETTING_ACCOUNT_TYPE
     }
-    
+
     public fun payload_type_setting_gas_fee(): vector<u8> {
         PAYLOAD_TYPE_SETTING_GAS_FEE
     }
@@ -246,4 +258,23 @@ module bluefin_cross_margin_dex::constants {
         PAYLOAD_TYPE_ADL
     }
 
+    public fun payload_type_tee_asset_update(): vector<u8> {
+        PAYLOAD_TYPE_TEE_ASSET_UPDATE
+    }
+
+    public fun payload_type_tee_position_update(): vector<u8> {
+        PAYLOAD_TYPE_TEE_POSITION_UPDATE
+    }
+
+    public fun payload_type_tee_user_authorized_accounts_update(): vector<u8> {
+        PAYLOAD_TYPE_TEE_USER_AUTHORIZED_ACCOUNTS_UPDATE
+    }
+
+    public fun payload_type_tee_user_trade_fee_update(): vector<u8> {
+        PAYLOAD_TYPE_TEE_USER_TRADE_FEE_UPDATE
+    }
+
+    public fun payload_type_tee_update_account_type(): vector<u8> {
+        PAYLOAD_TYPE_TEE_UPDATE_ACCOUNT_TYPE
+    }
 }

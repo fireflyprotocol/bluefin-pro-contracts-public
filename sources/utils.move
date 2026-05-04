@@ -8,11 +8,8 @@
 */
 
 module bluefin_cross_margin_dex::utils {
-    use std::string::{Self, String};
-    use std::u64;
-
-    // local modules
     use bluefin_cross_margin_dex::constants;
+    use std::{string::{Self, String}, u64};
 
     //===========================================================//
     //                      Public Methods                       //
@@ -25,17 +22,16 @@ module bluefin_cross_margin_dex::utils {
     /// - value: The value to be converted into base decimals
     /// - decimals: The current decimals in which the value is expressed
     public fun convert_to_protocol_decimals(value: u64, decimals: u8): u64 {
-
         // get protocol decimals
         let protocol_decimals = constants::protocol_decimals();
 
         // if value decimals are less than protocol decimals
         // we need to add 0s at the end
-        if(decimals < protocol_decimals){
+        if (decimals < protocol_decimals) {
             (value * u64::pow(10, protocol_decimals - decimals))
         } else {
-        // if decimals are greater than protocol decimals
-        // we need to remove leading zeros
+            // if decimals are greater than protocol decimals
+            // we need to remove leading zeros
             (value / u64::pow(10, decimals - protocol_decimals))
         }
     }
@@ -49,24 +45,22 @@ module bluefin_cross_margin_dex::utils {
     public fun convert_to_provided_decimals(value: u64, decimals: u8): u64 {
         // get protocol decimals
         let protocol_decimals = constants::protocol_decimals();
-        if(decimals < protocol_decimals){
+        if (decimals < protocol_decimals) {
             (value / u64::pow(10, protocol_decimals - decimals))
         } else {
             (value * u64::pow(10, decimals - protocol_decimals))
         }
     }
 
-
     /// Multiplies given values in base decimals
-    public fun base_mul(a : u64, b: u64): u64 {
+    public fun base_mul(a: u64, b: u64): u64 {
         (((a as u128) * (b as u128)) / (constants::base_uint() as u128) as u64)
     }
 
     /// Division by a base value with the result rounded down
-    public fun base_div(a : u64, b: u64): u64 {
+    public fun base_div(a: u64, b: u64): u64 {
         ((a as u128) * ( constants::base_uint() as u128) / (b as u128) as u64)
     }
-
 
     /// Returns true if the provided string is empty
     public fun is_empty_string(value: String): bool {
@@ -74,10 +68,26 @@ module bluefin_cross_margin_dex::utils {
     }
 
     /// Returns true if the trade is reducing
-    public fun is_reducing_trade(current_direction: bool, current_size: u64, trade_direction: bool, trade_size: u64): bool {
+    public fun is_reducing_trade(
+        current_direction: bool,
+        current_size: u64,
+        trade_direction: bool,
+        trade_size: u64,
+    ): bool {
         current_direction != trade_direction && trade_size <= current_size
     }
 
+    /// Returns true if the new position would be "reduced" relative to the
+    /// old one. No-op trades are considered reducing, for consistency with
+    /// [`is_reducing_trade`].
+    public fun is_reduced_position(
+        old_is_long: bool,
+        old_size: u64,
+        new_is_long: bool,
+        new_size: u64,
+    ): bool {
+        new_is_long == old_is_long && new_size <= old_size
+    }
 
     // Rounds the given number up/down
     // if the number is <= 0.5 its rounded down
@@ -112,8 +122,11 @@ module bluefin_cross_margin_dex::utils {
         }
     }
 
-
-    public fun round_to_tick_size_based_on_direction(value: u64, tick_size: u64, direction: bool): u64 {
+    public fun round_to_tick_size_based_on_direction(
+        value: u64,
+        tick_size: u64,
+        direction: bool,
+    ): u64 {
         if (direction) {
             round_up_to_tick_size(value, tick_size)
         } else {
@@ -138,7 +151,4 @@ module bluefin_cross_margin_dex::utils {
         let remainder = value % tick_size;
         value - remainder
     }
-
 }
-
-

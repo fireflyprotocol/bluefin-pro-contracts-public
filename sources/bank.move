@@ -8,20 +8,17 @@
 */
 
 module bluefin_cross_margin_dex::bank {
-    use sui::object::{Self, UID};
-    use sui::table::{Self, Table};
-    use sui::balance::{Self, Balance};
-    use sui::coin::{Self, Coin};
-    use sui::tx_context::{Self, TxContext};
-    use std::string::{Self, String};
-    use sui::transfer;
-    use sui::dynamic_field;
-    use std::type_name;
-    use std::ascii;
-
-    // local modules
-    use bluefin_cross_margin_dex::errors;
-    use bluefin_cross_margin_dex::utils;
+    use bluefin_cross_margin_dex::{errors, utils};
+    use std::{ascii, string::{Self, String}, type_name};
+    use sui::{
+        balance::{Self, Balance},
+        coin::{Self, Coin},
+        dynamic_field,
+        object::{Self, UID},
+        table::{Self, Table},
+        transfer,
+        tx_context::{Self, TxContext}
+    };
 
     // friend modules
     friend bluefin_cross_margin_dex::data_store;
@@ -31,9 +28,8 @@ module bluefin_cross_margin_dex::bank {
     //                           Structs                         //
     //===========================================================//
 
-
     /// Represents an asset
-    struct Asset has store, copy, drop {
+    struct Asset has copy, drop, store {
         // symbol/name of the asset
         symbol: String,
         // The asset type `0x...package::module::struct`
@@ -49,7 +45,7 @@ module bluefin_cross_margin_dex::bank {
         /// the minimum amount of deposit allowed (must be in 1e9)
         min_deposit: u64,
         /// the maximum amount of deposit allowed (must be in 1e9)
-        max_deposit: u64
+        max_deposit: u64,
     }
 
     /// Represents a deposit made to the asset bank
@@ -74,12 +70,12 @@ module bluefin_cross_margin_dex::bank {
     struct SupportedAsset has store {
         /// The information about the asset
         asset_details: Asset,
-        /// True if the details of this asset has been copied into the internal datastore 
-        synced: bool
+        /// True if the details of this asset has been copied into the internal datastore
+        synced: bool,
     }
 
     /// Represents the External bank that stores the margin/assets deposited by accounts
-    /// The struct carries dynamic fields which are indexed using `asset_symbol` 
+    /// The struct carries dynamic fields which are indexed using `asset_symbol`
     /// that is used to store the balances of deposited coins
     struct AssetBank has key, store {
         id: UID,
@@ -88,9 +84,8 @@ module bluefin_cross_margin_dex::bank {
         /// Map of the assets currently supported by protocol indexed using asset name/symbol
         supported_assets: Table<String, SupportedAsset>,
         /// Map of all the pending deposits made to the bank that are yet not copied into the internal data store
-        deposits: Table<u128, Deposit>
+        deposits: Table<u128, Deposit>,
     }
-
 
     //===============================================================//
     //                         Friend Methods                        //
@@ -98,7 +93,7 @@ module bluefin_cross_margin_dex::bank {
 
     /// Allows creation of asset bank. Supposed to be invoked from data_store::external_data_store_creator
     /// Each external data store carries an asset bank for people to deposit funds into.
-    public (friend) fun create_asset_bank(ctx: &mut TxContext): AssetBank {
+    public(friend) fun create_asset_bank(ctx: &mut TxContext): AssetBank {
         AssetBank {
             id: object::new(ctx),
             nonce: 0,
@@ -108,7 +103,7 @@ module bluefin_cross_margin_dex::bank {
     }
 
     /// Supports the provided asset. Invoked when `data_store:::support_asset` is invoked by the admin
-    /// 
+    ///
     /// Parameters:
     /// - bank: Mutable reference to the asset bank that will be supporting this asset
     /// - asset_symbol: Name of the coins that can be deposited into the bank
@@ -118,19 +113,21 @@ module bluefin_cross_margin_dex::bank {
     /// - accepted_as_collateral: Boolean indicating if the underlying can be used for opening positions or not
     /// - min_deposit: The minimum deposit of asset that is acceptable (must be in 1e9)
     /// - max_deposit: The maximum deposit of asset that is acceptable (must be in 1e9)
-    public (friend) fun support_asset<T>(
+    public(friend) fun support_asset<T>(
         bank: &mut AssetBank,
-        asset_symbol: String, 
-        decimals: u8, 
-        weight: u64, 
-        price: u64, 
-        accepted_as_collateral: bool, 
+        asset_symbol: String,
+        decimals: u8,
+        weight: u64,
+        price: u64,
+        accepted_as_collateral: bool,
         min_deposit: u64,
-        max_deposit: u64
+        max_deposit: u64,
     ): Asset {
-
         // revert if provided asset is already supported
-        assert!(!is_asset_supported(bank, asset_symbol), errors::asset_already_supported());
+        assert!(
+            !is_asset_supported(bank, asset_symbol),
+            errors::asset_already_supported(),
+        );
         // min deposit amount cant be zero and has to be < max deposit amount
         assert!(min_deposit > 0 && min_deposit < max_deposit, errors::invalid_quantity());
 
@@ -141,18 +138,18 @@ module bluefin_cross_margin_dex::bank {
         let asset = create_asset(
             asset_type,
             asset_symbol,
-            decimals, 
-            weight, 
-            price, 
+            decimals,
+            weight,
+            price,
             accepted_as_collateral,
             min_deposit,
-            max_deposit
+            max_deposit,
         );
 
         // create supported asset struct
         let supported_asset = SupportedAsset {
             asset_details: asset,
-            synced: false
+            synced: false,
         };
 
         // add the asset to supported list of assets
@@ -162,17 +159,15 @@ module bluefin_cross_margin_dex::bank {
         dynamic_field::add(&mut bank.id, asset_symbol, balance::zero<T>());
 
         asset
-
     }
 
     /// Sets the `sync` status of the provided asset as True.
     /// This is done once the internal data store syncs with internal data store
     /// on the given asset
-    public (friend) fun set_asset_status_as_synced(bank: &mut AssetBank, asset_symbol:String){
-
-        table::borrow_mut(&mut bank.supported_assets, asset_symbol).synced = true;
-
-    }
+    public(friend) fun set_asset_status_as_synced(
+        bank: &mut AssetBank,
+        asset_symbol: String,
+    ) { table::borrow_mut(&mut bank.supported_assets, asset_symbol).synced = true; }
 
     /// Allows caller to deposit the provided coin amount into the external bank
     ///
@@ -183,12 +178,18 @@ module bluefin_cross_margin_dex::bank {
     /// - coin_base_amount: The amount/quantity of coins to deposit. Should be in decimals of the coin. For USDC it should have 6 decimals, for BLUE 9 etc.
     /// - coin: The coin to be deposited
     /// - ctx: Mutable reference to `TxContext`, the transaction context.
-    /// 
+    ///
     /// Returns:
     /// - nonce: the new nonce of the bank
     /// - amount: The amount deposited in standard 9 decimals
-    public (friend) fun deposit_to_asset_bank<T>(bank: &mut AssetBank, asset_symbol: String, account: address, coin_base_amount: u64, coin: &mut Coin<T>, ctx: &mut TxContext): (u128, u64) {
-        
+    public(friend) fun deposit_to_asset_bank<T>(
+        bank: &mut AssetBank,
+        asset_symbol: String,
+        account: address,
+        coin_base_amount: u64,
+        coin: &mut Coin<T>,
+        ctx: &mut TxContext,
+    ): (u128, u64) {
         // revert if the asset being deposited is not supported
         assert!(is_asset_supported(bank, asset_symbol), errors::asset_not_supported());
 
@@ -197,21 +198,32 @@ module bluefin_cross_margin_dex::bank {
         let asset_type = get_asset_type<T>();
 
         // revert if the provided asset/coin type does not match with the provided asset symbol's type
-        assert!(asset_type == asset_details.type, errors::asset_type_and_symbol_mismatch());
+        assert!(
+            asset_type == asset_details.type,
+            errors::asset_type_and_symbol_mismatch(),
+        );
 
         // convert the amount ( expected as input in decimals of the asset) to 9 decimals supported by protocol
-        let amount = utils::convert_to_protocol_decimals(coin_base_amount, asset_details.decimals);
+        let amount = utils::convert_to_protocol_decimals(
+            coin_base_amount,
+            asset_details.decimals,
+        );
 
         // the amount being deposited must conform to min/max allowed deposit quantities
-        assert!(amount >= asset_details.min_deposit && amount <= asset_details.max_deposit, errors::invalid_quantity());
-
+        assert!(
+            amount >= asset_details.min_deposit && amount <= asset_details.max_deposit,
+            errors::invalid_quantity(),
+        );
 
         // Getting the amount of the coin
         let total_coin_value = coin::value(coin);
 
         // revert if amount > value of coin
-        assert!(coin_base_amount <= total_coin_value, errors::coin_does_not_have_enough_amount());
-        
+        assert!(
+            coin_base_amount <= total_coin_value,
+            errors::coin_does_not_have_enough_amount(),
+        );
+
         // // take the amount of coin for deposit
         let deposit_coin = coin::take(coin::balance_mut(coin), coin_base_amount, ctx);
 
@@ -221,7 +233,7 @@ module bluefin_cross_margin_dex::bank {
             symbol: asset_symbol,
             from: tx_context::sender(ctx),
             amount,
-            account
+            account,
         };
 
         // Store the deposited coin with in the Deposit struct
@@ -234,60 +246,59 @@ module bluefin_cross_margin_dex::bank {
         table::add(&mut bank.deposits, bank.nonce, deposit);
 
         (bank.nonce, amount)
-
     }
-
 
     /// Returns the deposit
     ///
     /// Parameters:
     /// - bank: The external bank to which amount was deposited
     /// - nonce: The nonce of the deposit (Generated at the time funds were deposited to external bank)
-    /// 
+    ///
     /// Returns:
     /// - from: The user that deposited the funds
     /// - to/account: the address to which amount was deposited in external/asset bank
     /// - amount: The amount deposited
     /// - asset_symbol: The symbol of the asset deposited
     /// - coin: The deposit coin
-    public (friend) fun remove_deposit<T>(bank: &mut AssetBank, nonce:u128): (address, address, u64, String, Coin<T>){
-
+    public(friend) fun remove_deposit<T>(
+        bank: &mut AssetBank,
+        nonce: u128,
+    ): (address, address, u64, String, Coin<T>) {
         // revert if the nonce does not exist in the bank deposit table
-        // this implies either the nonce is incorrect or the funds for the provided deposited are 
+        // this implies either the nonce is incorrect or the funds for the provided deposited are
         // already moved to internal data store
         // @dev once funds are moved to IDS, the provided nonce is deleted from external/asset bank
         assert!(table::contains(&bank.deposits, nonce), errors::invalid_nonce());
 
         // Fetch and remove the deposit entry from external bank for given nonce
         // @dev we can keep the deposit entry in table for historical records
-        // but we are paying gas fee for the entry and it is never going to be 
+        // but we are paying gas fee for the entry and it is never going to be
         // used again. Best to remove it.
         let deposit = table::remove(&mut bank.deposits, nonce);
 
-        let coin = dynamic_field::remove(&mut deposit.id, b"coin");        
-   
-        let Deposit {id, symbol, from, account, amount } = deposit;
-        
+        let coin = dynamic_field::remove(&mut deposit.id, b"coin");
+
+        let Deposit { id, symbol, from, account, amount } = deposit;
+
         object::delete(id);
 
-        (
-            from,
-            account,
-            amount, 
-            symbol,
-            coin
-        )
+        (from, account, amount, symbol, coin)
     }
 
-    public (friend) fun merge_coin_into_balance<T>(bank: &mut AssetBank, coin: Coin<T>, asset_symbol: String){
-
+    public(friend) fun merge_coin_into_balance<T>(
+        bank: &mut AssetBank,
+        coin: Coin<T>,
+        asset_symbol: String,
+    ) {
         // get coin balance in the bank
-        let balance = dynamic_field::borrow_mut<String, Balance<T>>(&mut bank.id, asset_symbol);
+        let balance = dynamic_field::borrow_mut<String, Balance<T>>(
+            &mut bank.id,
+            asset_symbol,
+        );
 
         balance::join(balance, coin::into_balance<T>(coin));
-
     }
-    
+
     /// Withdraws margin from external/asset bank to the account provided
     ///
     /// Parameters:
@@ -296,8 +307,13 @@ module bluefin_cross_margin_dex::bank {
     /// - account: The account to transfer margin to
     /// - amount: The amount of margin to withdraw/transfer (will be in 9 decimals)
     /// - ctx: Mutable reference to `TxContext`, the transaction context.
-    public (friend) fun withdraw_from_asset_bank<T>(bank: &mut AssetBank, asset_symbol: String, account: address, amount: u64, ctx: &mut TxContext){
-
+    public(friend) fun withdraw_from_asset_bank<T>(
+        bank: &mut AssetBank,
+        asset_symbol: String,
+        account: address,
+        amount: u64,
+        ctx: &mut TxContext,
+    ) {
         // revert if the asset being deposited is not supported
         assert!(is_asset_supported(bank, asset_symbol), errors::asset_not_supported());
 
@@ -305,12 +321,21 @@ module bluefin_cross_margin_dex::bank {
         let asset_type = get_asset_type<T>();
 
         // revert if the provided asset/coin type does not match with the provide asset symbol's type
-        assert!(asset_type == asset_details.type, errors::asset_type_and_symbol_mismatch());
-                
-        let coin_base_amount = utils::convert_to_provided_decimals((amount as u64), asset_details.decimals);
+        assert!(
+            asset_type == asset_details.type,
+            errors::asset_type_and_symbol_mismatch(),
+        );
+
+        let coin_base_amount = utils::convert_to_provided_decimals(
+            (amount as u64),
+            asset_details.decimals,
+        );
 
         // get coin balance in the bank
-        let balance = dynamic_field::borrow_mut<String, Balance<T>>(&mut bank.id, asset_symbol);
+        let balance = dynamic_field::borrow_mut<String, Balance<T>>(
+            &mut bank.id,
+            asset_symbol,
+        );
 
         // withdrawing the coin from the bank
         let coin = coin::take(balance, (coin_base_amount as u64), ctx);
@@ -318,9 +343,8 @@ module bluefin_cross_margin_dex::bank {
         // transferring the coin to the destination account
         transfer::public_transfer(
             coin,
-            account
+            account,
         );
-
     }
 
     //===============================================================//
@@ -331,20 +355,22 @@ module bluefin_cross_margin_dex::bank {
         table::contains(&bank.supported_assets, asset_symbol)
     }
 
-    public fun asset_exists_in_table(assets_table: &Table<String, Asset>, asset_symbol: String): bool {
+    public fun asset_exists_in_table(
+        assets_table: &Table<String, Asset>,
+        asset_symbol: String,
+    ): bool {
         table::contains(assets_table, asset_symbol)
     }
 
-
     /// Returns the values of the asset
-    public fun asset_values(asset:Asset): (String, String, u8, u64, u64, bool){
+    public fun asset_values(asset: Asset): (String, String, u8, u64, u64, bool) {
         (
             asset.type,
             asset.symbol,
             asset.decimals,
             asset.weight,
             asset.price,
-            asset.collateral
+            asset.collateral,
         )
     }
 
@@ -360,42 +386,30 @@ module bluefin_cross_margin_dex::bank {
         table::borrow(&bank.supported_assets, asset_symbol).asset_details
     }
 
-
     /// Returns the amount of provided asset quantity that is worth the provided amount of USD
-    public fun get_asset_with_provided_usd_value(supported_assets_table: &Table<String, Asset>, asset_symbol: String, amount: u64): u64 {
-        
-        if (utils::is_empty_string(asset_symbol)) {
+    public fun get_asset_with_provided_usd_value(
+        supported_assets_table: &Table<String, Asset>,
+        asset_symbol: String,
+        amount: u64,
+    ): u64 { if (utils::is_empty_string(asset_symbol)) {
             return amount
-        };
-
-        assert!(asset_exists_in_table(supported_assets_table, asset_symbol), errors::asset_not_supported());
-
-        let asset_details = *table::borrow(supported_assets_table, asset_symbol);
-        let (_, _, _, weight, price, _) = asset_values(asset_details);
-        
-        // amount / (price * weight)
-        // If user has selected BLUE token for fee payment which has weight 0.5 and price 0.1
-        // If the fee required is 2 USD
-        // They will need to pay 2 / (0.1 * 05) = 40 USD
-        utils::base_div(amount, utils::base_mul(price, weight))
-    }
-
+        }; assert!(asset_exists_in_table(supported_assets_table, asset_symbol), errors::asset_not_supported()); let asset_details = *table::borrow(supported_assets_table, asset_symbol); let (_, _, _, weight, price, _) = asset_values(asset_details); utils::base_div(amount, utils::base_mul(price, weight)) } // They will need to pay 2 / (0.1 * 05) = 40 USD // If the fee required is 2 USD // If user has selected BLUE token for fee payment which has weight 0.5 and price 0.1 // amount / (price * weight)
 
     //===============================================================//
     //                       Internal Methods                        //
     //===============================================================//
 
-     /// Creates an asset using provided details
+    /// Creates an asset using provided details
     fun create_asset(
-        type: String, 
-        symbol: String, 
-        decimals: u8, 
-        weight: u64, 
-        price: u64, 
-        collateral: bool, 
-        min_deposit: u64, 
-        max_deposit:u64
-    ): Asset{
+        type: String,
+        symbol: String,
+        decimals: u8,
+        weight: u64,
+        price: u64,
+        collateral: bool,
+        min_deposit: u64,
+        max_deposit: u64,
+    ): Asset {
         Asset {
             type,
             symbol,
@@ -404,16 +418,15 @@ module bluefin_cross_margin_dex::bank {
             price,
             collateral,
             min_deposit,
-            max_deposit
+            max_deposit,
         }
     }
 
-    fun get_asset_type<T>(): String{
+    fun get_asset_type<T>(): String {
         let ascii_string = type_name::into_string(type_name::with_defining_ids<T>());
-        let type_bytes =  ascii::into_bytes(ascii_string);
+        let type_bytes = ascii::into_bytes(ascii_string);
         string::utf8(type_bytes)
     }
-
 
     #[test_only]
     public fun get_deposited_asset(bank: &AssetBank, nonce: u128): &Deposit {
@@ -422,11 +435,13 @@ module bluefin_cross_margin_dex::bank {
     }
 
     #[test_only]
-    public fun get_deposit_values(bank: &mut AssetBank, nonce: u128): (address, address, u64, String) {
+    public fun get_deposit_values(
+        bank: &mut AssetBank,
+        nonce: u128,
+    ): (address, address, u64, String) {
         let deposit = get_deposited_asset(bank, nonce);
         (deposit.from, deposit.account, deposit.amount, deposit.symbol)
     }
-
 
     #[test_only]
     public fun get_bank_nonce(bank: &AssetBank): u128 {
@@ -434,14 +449,25 @@ module bluefin_cross_margin_dex::bank {
     }
 
     #[test_only]
-    public fun withdraw_from_bank_directly<T>(bank: &mut AssetBank, asset_symbol: String, account: address, amount: u64, ctx: &mut TxContext){
+    public fun withdraw_from_bank_directly<T>(
+        bank: &mut AssetBank,
+        asset_symbol: String,
+        account: address,
+        amount: u64,
+        ctx: &mut TxContext,
+    ) {
         withdraw_from_asset_bank<T>(bank, asset_symbol, account, amount, ctx);
     }
 
     #[test_only]
-    public fun add_deposit_directly<T>(bank: &mut AssetBank, asset_symbol: String, account: address, amount: u64, coin: &mut Coin<T>, ctx: &mut TxContext){
+    public fun add_deposit_directly<T>(
+        bank: &mut AssetBank,
+        asset_symbol: String,
+        account: address,
+        amount: u64,
+        coin: &mut Coin<T>,
+        ctx: &mut TxContext,
+    ) {
         deposit_to_asset_bank<T>(bank, asset_symbol, account, amount, coin, ctx);
     }
-
-
 }

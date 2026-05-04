@@ -8,7 +8,6 @@
 */
 
 module bluefin_cross_margin_dex::errors {
-
     //===========================================================//
     //                          Constants                        //
     //===========================================================//
@@ -161,7 +160,6 @@ module bluefin_cross_margin_dex::errors {
     /// must be liquidated first
     const EInvalidLiquidationPosition: u64 = 1049;
 
-
     /// Triggered when an account is not a whitelisted liquidator
     const EUnauthorizedLiquidator: u64 = 1050;
 
@@ -182,19 +180,19 @@ module bluefin_cross_margin_dex::errors {
 
     /// Triggered when trying to close position for a market that is not delisted
     const ENotDelisted: u64 = 1056;
-    
+
     /// Triggered when their exists no max oi open limit for the selected user leverage
     const ENoMaxOIOpen: u64 = 1057;
 
     /// Triggered when a self trade, liquidation or ADL is being performed
     const ESelfTrade: u64 = 1058;
 
-    /// Triggered when a user tries to open an isolated position 
+    /// Triggered when a user tries to open an isolated position
     /// for a market for which they already have a cross position open
     /// or vice-versa
     const EOpeningBothPositionTypesNotAllowed: u64 = 1059;
 
-    /// Triggered when trying to set a value for a 
+    /// Triggered when trying to set a value for a
     /// perpetual/market config that is not permissible
     const EOutOfConfigBounds: u64 = 1060;
 
@@ -217,11 +215,8 @@ module bluefin_cross_margin_dex::errors {
     const EInvalidPayloadType: u64 = 1066;
 
     /// Triggered when a health check fails
-    /// Case 1: 4001 Case 2: 4002, Case 3: 4003 and Case 4: 4004 
+    /// Case 1: 4001 Case 2: 4002, Case 3: 4003 and Case 4: 4004
     const EHealthCheckFailed: u64 = 4000;
-
-
-
 
     //===========================================================//
     //                        Getter Methods                     //
@@ -271,7 +266,6 @@ module bluefin_cross_margin_dex::errors {
         ENotBankrupt
     }
 
-
     public fun invalid_permission(): u64 {
         EInvalidPermission
     }
@@ -295,7 +289,7 @@ module bluefin_cross_margin_dex::errors {
     public fun invalid_oracle_price(): u64 {
         EInvalidOraclePrice
     }
-    
+
     public fun already_synced(): u64 {
         EAlreadySynced
     }
@@ -367,7 +361,6 @@ module bluefin_cross_margin_dex::errors {
     public fun operator_already_set(): u64 {
         EOperatorAlreadySet
     }
-
 
     public fun invalid_funding_time(): u64 {
         EInvalidFundingTimestamp
@@ -488,5 +481,4 @@ module bluefin_cross_margin_dex::errors {
     public fun invalid_payload_type(): u64 {
         EInvalidPayloadType
     }
-
 }
