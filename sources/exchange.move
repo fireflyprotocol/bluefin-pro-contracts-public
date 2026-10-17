@@ -1014,7 +1014,7 @@ entry fun trade(
 
     // verify the max allowed oi open still holds for both maker and taker
     verify_notion(&maker_position, mark_price, max_notion_at_open, account::is_institution(immutable_maker_account));
-    verify_notion(&taker_position, mark_price, max_notion_at_open, account::is_institution(immutable_maker_account));
+    verify_notion(&taker_position, mark_price, max_notion_at_open, account::is_institution(immutable_taker_account));
 
     let mutable_maker_account = data_store::get_mutable_account_from_accounts_table(
         accounts_table,
